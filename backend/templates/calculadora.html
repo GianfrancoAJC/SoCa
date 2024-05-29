@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora - SoCa</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Estilos personalizados */
+        /* Estilos para el jumbotron */
+        .jumbotron {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            margin-top: 50px;
+            text-align: center;
+        }
+        .lead {
+            font-size: 1.25rem;
+            margin-top: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">SoCa</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Inicio</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/calculadora">Calculadora</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="container">
+        <div class="jumbotron">
+            <h1 class="display-4">Calculadora de FOMO</h1>
+            <form action="/calcular" method="POST">
+                <div class="form-group">
+                    <label for="v1">¿Cuantos minutos has usado tus redes sociales el día de hoy? (revisar Bienestar Digital).</label>
+                    <input type="number" class="form-control" id="v1" name="v1" required>
+                </div>
+                <div class="form-group">
+                    <label for="v2">¿Cuantas notificaciones has tenido? (revisar Bienestar Digital).</label>
+                    <input type="number" class="form-control" id="v2" name="v2" required>
+                </div>
+                <div class="form-group">
+                    <label for="v3">¿Cuantas veces has abierto la aplicacion? (revisar Bienestar Digital).</label>
+                    <input type="number" class="form-control" id="v3" name="v3" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Calcular</button>
+            </form>            
+        </div>
+    </div>
+
+    <!-- Scripts de Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
