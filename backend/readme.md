@@ -14,7 +14,7 @@
 
 ## Operations
 
-### Create Employee
+### Create User
 
 ```
 curl -F "firstname=Juan" -F "lastname=perez" -F "age=20" -F "selectDepartment=eef11f69-ffe9-4078-ad09-16e31fe7f77c" -F "image=@cristiano.jpeg;type=image/jpeg" -X POST http://localhost:5002/employees
