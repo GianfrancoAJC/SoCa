@@ -1,4 +1,4 @@
-# Librearias empleadas
+# Librerias empleadas
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
@@ -17,6 +17,7 @@ import uuid
 import os
 from datetime import datetime
 import sys
+import bcrypt
 
 # Configuration
 app = Flask(__name__)
@@ -99,6 +100,14 @@ def calcular():
         return jsonify({'success': False, 'message': 'Error in the calculation'}), 500
     finally:
         db.session.close()
+
+@app.route('/Alogin', methods=['GET'])
+def Alogin():
+    return render_template('Alogin.html')
+
+@app.route('/Blogin', methods=['GET'])
+def Blogin():
+    return render_template('Blogin.html')
 
 @app.errorhandler(405)
 def method_not_allowed(error):
