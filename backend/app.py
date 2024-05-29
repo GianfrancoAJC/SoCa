@@ -18,6 +18,9 @@ import os
 from datetime import datetime
 import sys
 import bcrypt
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Configuration
 app = Flask(__name__)
@@ -25,6 +28,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost:54
 app.config['UPLOAD_FOLDER'] = ''
 db = SQLAlchemy(app)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+# Configuración del servidor y las credenciales
+smtp_server = 'smtp.gmail.com'
+smtp_port = 587
+smtp_user = 'aldo.jaimes@utec.edu.pe'
+smtp_password = 'mmqd rgig sapg nmcb'
 
 # Models
 class User(db.Model):
@@ -108,6 +117,57 @@ def Alogin():
 @app.route('/Blogin', methods=['GET'])
 def Blogin():
     return render_template('Blogin.html')
+
+@app.route('/Aregister', methods=['GET'])
+def Aregister():
+    return jsonify({'success': True, 'message': 'Registro correcto!'}), 200
+
+@app.route('/Bregister', methods=['POST'])
+def Bregister():
+    try:
+        print("0")
+        token = request.form['Token']
+        print("1")
+        rtoken = request.form['realToken']
+        print("2")
+        if token == rtoken:
+            return jsonify({'success': True, 'message': 'Registro correcto!'}), 200
+        else:
+            return jsonify({'success': False, 'message': 'Token incorrecto'}), 401
+    except Exception as e:
+        print(e)
+        print(sys.exc_info())
+        return jsonify({'success': False, 'message': 'Error in the registration'}), 500
+
+@app.route('/Token', methods=['POST'])
+def token():
+    try:
+        email = request.form['email']
+        if email:
+            from_email = 'aldo.jaimes@utec.edu.pe'
+            to_email = email
+            subject = "Token de acceso: SoCa"
+            token = "1234"
+            body = f"Su token de acceso es: {token}"
+            message = MIMEMultipart()
+            message['From'] = from_email
+            message['To'] = to_email
+            message['Subject'] = subject
+            message.attach(MIMEText(body, 'plain'))
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(from_email, to_email, message.as_string())
+            server.quit()
+            return render_template('Blogin.html', token=token)
+        else:
+            return jsonify({'success': False, 'message': 'You need a email'}), 401
+    except Exception as e:
+        print(e)
+        print(sys.exc_info())
+        return jsonify({'success': False, 'message': 'Error in the generation of the token'}), 500
+    finally:
+        db.session.close()
 
 @app.errorhandler(405)
 def method_not_allowed(error):

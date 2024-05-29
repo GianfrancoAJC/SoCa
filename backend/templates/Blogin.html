@@ -39,17 +39,27 @@
                     </div>
                     <!-- Register Form -->
                     <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
-                        <form action = "/calculadora" class="mt-3">
+                        <form action = "/Token" class="mt-3" method="POST">
+                            <div class="form-group">
+                                <label for="email">Email de Facebook</label>
+                                <input type="email" class="form-control" id="email" placeholder="Introduce un mail para enviarte el token de verificación" name="email">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Generar token!</button>
+                        </form>
+                        {% if token %}
+                        <form action = "/Bregister" class="mt-3" method="POST">
                             <div class="form-group">
                                 <label for="FacebookEmail">Email de Facebook</label>
                                 <input type="email" class="form-control" id="registerFacebookEmail" placeholder="Introduce tu email de Facebook">
                             </div>
                             <div class="form-group">
                                 <label for="Token">Token</label>
-                                <input type="password" class="form-control" id="registerToken" placeholder="Introduce el token que llego a su email">
+                                <input type="password" class="form-control" id="Token" placeholder="Introduce el token que llego a su email" name="Token">
                             </div>
+                            <input id="realToken" class="form-control" value={{token}} type="hidden" name="realToken">
                             <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
