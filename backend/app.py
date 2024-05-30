@@ -98,8 +98,10 @@ def calcular():
         v3 = int(request.form['v3'])
         recomendaciones = []
         if v1 > 120:
-            if (v1/v3 < v2*2 and v2 > 0) or (v1/v3 > 2 and v2 == 0):
+            if (v1/v3 < v2*2 and v2 > 0) or (v1/v3 < 2 and v2 == 0):
                 recomendaciones.append('Existen posibilidades de que usted padezca de FOMO')
+            else:
+                recomendaciones.append('No se detectaron problemas')
         else:
             recomendaciones.append('No se detectaron problemas')
         return render_template('resultados.html', recomendaciones = recomendaciones)
@@ -125,11 +127,8 @@ def Aregister():
 @app.route('/Bregister', methods=['POST'])
 def Bregister():
     try:
-        print("0")
         token = request.form['Token']
-        print("1")
         rtoken = request.form['realToken']
-        print("2")
         if token == rtoken:
             return jsonify({'success': True, 'message': 'Registro correcto!'}), 200
         else:
