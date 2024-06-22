@@ -10,6 +10,16 @@ from .utilities import allowed_file
 from .users_controller import users_bp
 from .authentication import authorize
 import sys
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from datetime import datetime
+
+# Configuración del servidor y las credenciales
+smtp_server = 'smtp.gmail.com'
+smtp_port = 587
+smtp_user = 'aldo.jaimes@utec.edu.pe'
+smtp_password = 'mmqd rgig sapg nmcb'
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -154,6 +164,34 @@ def create_app(test_config=None):
                 'success': False,
                 'message': 'Error saving data'
             }), 500
+        
+    @app.route('/Token', methods=['POST'])
+    def token():
+        try:
+            email = request.form['username']
+            if email:
+                from_email = 'aldo.jaimes@utec.edu.pe'
+                to_email = email
+                subject = "Token de acceso: SoCa"
+                token = int(datetime.now())
+                body = f"Su token de acceso es: {token}"
+                message = MIMEMultipart()
+                message['From'] = from_email
+                message['To'] = to_email
+                message['Subject'] = subject
+                message.attach(MIMEText(body, 'plain'))
+                server = smtplib.SMTP(smtp_server, smtp_port)
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.sendmail(from_email, to_email, message.as_string())
+                server.quit()
+                return jsonify({'success': True, 'message': 'Token enviado!', 'token': token}), 200
+            else:
+                return jsonify({'success': False, 'message': 'You need a email'}), 401
+        except Exception as e:
+            print(e)
+            print(sys.exc_info())
+            return jsonify({'success': False, 'message': 'Error in the generation of the token'}), 500
 
     @app.errorhandler(405)
     def method_not_allowed(error):
