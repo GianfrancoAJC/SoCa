@@ -5,10 +5,9 @@ from flask import (
     abort,
     Response
 )
-
 import jwt
 import datetime
-from .models import User
+from app.models import User
 from config.local import config
 
 users_bp = Blueprint('/users', __name__)
@@ -22,30 +21,34 @@ def create_user():
 
         if 'utoken' not in body:
             error_lists.append('token is required')
+            utoken = None
         else:
             utoken = body.get('utoken')
 
         if 'rtoken' not in body:
             error_lists.append('Server token error')
+            rtoken = None
         else:
             rtoken = body.get('rtoken')
 
         if 'username' not in body:
             error_lists.append('username is required')
+            user_db = None
         else:
             username = body.get('username')
+            user_db = User.query.filter(User.username == username).first()
 
         if 'password' not in body:
             error_lists.append('password is required')
+            password = "No password provided"
         else:
             password = body.get('password')
 
         if 'confirmationPassword' not in body:
             error_lists.append('confirmationPassword is required')
+            confirmationPassword = "No confirmationPassword provided"
         else:
             confirmationPassword = body.get('confirmationPassword')
-
-        user_db = User.query.filter(User.username == username).first()
 
         if user_db is not None:
             if user_db.username == username:
@@ -82,7 +85,7 @@ def create_user():
             'success': False,
             'errors': error_lists,
             'message': 'Error creating a new user'
-        })
+        }), returned_code
     elif returned_code != 201:
         abort(returned_code)
     else:

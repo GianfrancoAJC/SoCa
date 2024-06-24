@@ -96,8 +96,7 @@ SoCa/
 │   │   ├── Instagram-Icon.jpg                   # Imagen logo de Instagram
 │   │   └── logo.ico                             # Ícono alternativo de la página
 ├── ├── ejecutar.sh                              # Archivo para ejecutar el servidor backend de la aplicación
-├── ├── requirement.txt                          # Archivo de requerimientos para instalar las dependencias
-├── └── traindata.json                           # Archivo json con los datos de entrenamiento del modelo de regresión
+├── └── requirement.txt                          # Archivo de requerimientos para instalar las dependencias
 ├── frontend/                                    # Directorio del frontend
 │   ├── public/                                  # Directorio de archivos públicos
 │   │   ├── favicon.ico                          # Ícono de la página

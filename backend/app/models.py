@@ -101,23 +101,25 @@ class Message(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     message = db.Column(db.String(400), nullable=False)
     chat_id = db.Column(db.String(36), db.ForeignKey('chats.id'), nullable=False)
+    sender_type = db.Column(db.String(10), nullable=False)  # 'user' o 'auto'
     created_at = db.Column(db.DateTime(timezone=True), nullable=False)
     modified_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     def __repr__(self):
-        return 'Message: {}, {}'.format(self.id, self.message)
-    
-    def __init__(self, chat_id, message):
+        return 'Message: {}, {}, {}'.format(self.id, self.message, self.sender_type)
+
+    def __init__(self, chat_id, message, sender_type):
         self.chat_id = chat_id
         self.message = message
+        self.sender_type = sender_type
         self.created_at = datetime.now()
 
     def serialize(self):
         return {
             'id': self.id,
             'chat_id': self.chat_id,
-            'user_id': self.user_id,
-            'message': self.message
+            'message': self.message,
+            'sender_type': self.sender_type,
         }
     
 class Data(db.Model):

@@ -4,22 +4,18 @@ from flask import (
     jsonify,
     abort
 )
-from .models import db, setup_db, Chat, Message, Data
+from app.models import db, setup_db, Chat, Message, Data
 from flask_cors import CORS
-from .utilities import allowed_file
-from .users_controller import users_bp
-from .authentication import authorize
+from app.utilities import allowed_file, generate_random_response, smtp_server, smtp_port, smtp_user, smtp_password
+from app.users_controller import users_bp
+from app.authentication import authorize
 import sys
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
-
-# Configuración del servidor y las credenciales
-smtp_server = 'smtp.gmail.com'
-smtp_port = 587
-smtp_user = 'aldo.jaimes@utec.edu.pe'
-smtp_password = 'mmqd rgig sapg nmcb'
+from datetime import datetime, timedelta
+from threading import Thread
+import requests
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -27,7 +23,7 @@ def create_app(test_config=None):
         app.config['UPLOAD_FOLDER'] = ''
         app.register_blueprint(users_bp)
         setup_db(app, test_config['database_path'] if test_config else None)
-        CORS(app, origins=['http://localhost:8080'])
+        CORS(app, origins=["*", "http://localhost:5001", "http://localhost:8080"])
 
     @app.after_request
     def after_request(response):
@@ -37,7 +33,7 @@ def create_app(test_config=None):
         return response
     
     @app.route('/chat', methods=['POST'])
-    @authorize
+    # @authorize
     def get_user_chats():
         try:
             data = request.get_json()
@@ -56,15 +52,17 @@ def create_app(test_config=None):
             }), 500
         
     @app.route('/chats', methods=['POST'])
-    @authorize
+    # @authorize
     def new_chat():
         try:
             data = request.get_json()
-            user_id = data['user_id']
-            chat_name = data['chat_name']
-            chat = Chat(user_id=user_id, chat_name=chat_name)
-            db.session.add(chat)
-            db.session.commit()
+            n = data['n']
+            for i in range(n):
+                user_id = data['user_id']
+                chat_name = data['chat_name'][i]
+                chat = Chat(user_id=user_id, chat_name=chat_name)
+                db.session.add(chat)
+                db.session.commit()
             return jsonify({
                 'success': True,
                 'chat': chat.serialize()
@@ -79,7 +77,7 @@ def create_app(test_config=None):
             }), 500
 
     @app.route('/message', methods=['POST'])
-    @authorize
+    # @authorize
     def get_chat_messages():
         try:
             data = request.get_json()
@@ -98,15 +96,17 @@ def create_app(test_config=None):
             }), 500
     
     @app.route('/messages', methods=['POST'])
-    @authorize
+    # @authorize
     def new_messages():
         try:
             data = request.get_json()
             chat_id = data['chat_id']
             message = data['message']
-            new_message = Message(chat_id=chat_id, message=message)
+            new_message = Message(chat_id=chat_id, message=message, sender_type='user')
             db.session.add(new_message)
             db.session.commit()
+            # Llamada al endpoint de respuesta automática
+            requests.post('http://localhost:5001/auto_response', json={'chat_id': chat_id})
             return jsonify({
                 'success': True,
                 'message': new_message.serialize()
@@ -119,9 +119,22 @@ def create_app(test_config=None):
                 'success': False,
                 'message': 'Error saving message'
             }), 500
+        
+    @app.route('/auto_response', methods=['POST'])
+    def auto_response():
+        try:
+            data = request.get_json()
+            chat_id = data['chat_id']
+            thread = Thread(target=generate_random_response, args=(chat_id,))
+            thread.start()
+            return jsonify({'success': True, 'message': 'Response will be generated'}), 201
+        except Exception as e:
+            print(sys.exc_info())
+            print('e: ', e)
+            return jsonify({'success': False, 'message': 'Error generating response'}), 500
     
     @app.route('/data', methods=['POST'])
-    @authorize
+    # @authorize
     def get_data():
         try:
             data = request.get_json()
@@ -140,7 +153,7 @@ def create_app(test_config=None):
             }), 500
         
     @app.route('/datas', methods=['POST'])
-    @authorize
+    # @authorize
     def new_data():
         try:
             data = request.get_json()
@@ -163,6 +176,28 @@ def create_app(test_config=None):
             return jsonify({
                 'success': False,
                 'message': 'Error saving data'
+            }), 500
+        
+    @app.route('/analytics', methods=['POST'])
+    def get_analytics():
+        try:
+            data = request.get_json()
+            user_id = data['user_id']
+            chats = Chat.query.filter_by(user_id=user_id).all()
+            total_messages = sum([len(chat.messages) for chat in chats])
+            response_times = [message.modified_at - message.created_at for chat in chats for message in chat.messages]
+            average_response_time = sum(response_times, timedelta(0)) / len(response_times) if response_times else timedelta(0)
+            return jsonify({
+                'success': True,
+                'total_messages': total_messages,
+                'average_response_time': average_response_time.total_seconds()
+            }), 201
+        except Exception as e:
+            print(sys.exc_info())
+            print('e: ', e)
+            return jsonify({
+                'success': False,
+                'message': 'Error getting analytics'
             }), 500
         
     @app.route('/Token', methods=['POST'])
