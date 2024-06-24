@@ -131,23 +131,24 @@ SoCa/
 curl -F "username=Juan" -F "password=Perez" -F "confirmationPassword=Perez" -F "utoken=1234" -F "rtoken=1234" -X POST http://localhost:5001/users
 
 {
-  "user_created_id": "27b79c53-edeb-4caf-9bcb-3725669eaa9d",
-  "token": "token",
-  "success": True
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2NyZWF0ZWRfaWQiOiJlYjNiNWQwMC1lNzg1LTQ0NzYtYThiNy0zNGJlNTIwYWU2YmIiLCJleHAiOjE3MTkyNDA5MzF9.h0FxP4HKLY_ClMY-_4eaYIP8u1Xc6ve2AAegnXn27Iw",
+    "user_created_id": "eb3b5d00-e785-4476-a8b7-34be520ae6bb"
 }
 
 curl -X POST http://localhost:5001/users
 
 {
-  "errors": [
-    "username is required",
-    "password is required",
-    "confirmationPassword is required",
-    "utoken is required",
-    "rtoken is required"
-  ],
-  "message": "Error creating a new user",
-  "success": False
+    "errors": [
+        "token is required",
+        "Server token error",
+        "username is required",
+        "password is required",
+        "confirmationPassword is required",
+        "password and confirmationPassword does not match"
+    ],
+    "message": "Error creating a new user",
+    "success": false
 }
 ```
 

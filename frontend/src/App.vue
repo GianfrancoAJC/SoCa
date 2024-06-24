@@ -37,7 +37,7 @@ export default {
       this.questionnaireCompleted = true;
       try {
         const response = await axios.post(
-          "http://localhost:5000/generate_chats",
+          "http://localhost:5001/generate_chats",
           answers
         );
         this.chats = response.data.chats;

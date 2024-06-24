@@ -1,56 +1,64 @@
 <template>
   <div class="questionnaire">
-    <h2>Cuestionario</h2>
-    <form @submit.prevent="submit">
-      <div class="form-group">
-        <label for="question1">¿Cómo te sientes hoy?</label>
-        <input
-          type="text"
-          id="question1"
-          v-model="answers.question1"
-          class="form-control"
-        />
+    <h2>Cuestionario Inicial</h2>
+    <form @submit.prevent="submitForm">
+      <div v-for="(chat, index) in chats" :key="index" class="form-group">
+        <label :for="'chat' + index">Nombre del Chat {{ index + 1 }}</label>
+        <input type="text" :id="'chat' + index" v-model="chat.name" class="form-control" required />
       </div>
       <div class="form-group">
-        <label for="question2">¿Cuál es tu color favorito?</label>
-        <input
-          type="text"
-          id="question2"
-          v-model="answers.question2"
-          class="form-control"
-        />
+        <label for="numChats">Número de chats:</label>
+        <input type="number" id="numChats" v-model="numChats" @change="updateChats" min="1" max="20" class="form-control" required />
       </div>
-      <button type="submit" class="btn btn-primary">Enviar</button>
+      <button type="submit" class="btn btn-primary">Iniciar Simulación</button>
     </form>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: "UserQuestionnaire",
+  name: 'Questionnaire',
   data() {
     return {
-      answers: {
-        question1: "",
-        question2: "",
-      },
+      numChats: 1,
+      chats: [{ name: '' }],
+      user_id: 'some_user_id' // This should be dynamic
     };
   },
   methods: {
-    submit() {
-      this.$emit("complete", this.answers);
+    updateChats() {
+      const newChats = [];
+      for (let i = 0; i < this.numChats; i++) {
+        newChats.push({ name: '' });
+      }
+      this.chats = newChats;
     },
-  },
+    async submitForm() {
+      try {
+        const chatNames = this.chats.map(chat => chat.name);
+        await axios.post('http://localhost:5000/chats', {
+          user_id: this.user_id,
+          chat_name: chatNames,
+          n: this.numChats
+        });
+        this.$router.push({ name: 'ChatApp' });
+      } catch (error) {
+        console.error('Error creating chats:', error);
+      }
+    }
+  }
 };
 </script>
 
 <style scoped>
 .questionnaire {
+  max-width: 600px;
   margin: auto;
   padding: 20px;
-  width: 50%;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 </style>
