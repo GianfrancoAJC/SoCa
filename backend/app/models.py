@@ -76,6 +76,7 @@ class Chat(db.Model):
     __tablename__ = 'chats'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     chat_name = db.Column(db.String(60), nullable=False)
+    chat_relationship = db.Column(db.String(10), nullable=False) 
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     messages = db.relationship('Message', backref='chat', lazy=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False)
@@ -84,16 +85,18 @@ class Chat(db.Model):
     def __repr__(self):
         return 'Chat: {}, {}'.format(self.id, self.chat_name)
     
-    def __init__(self, user_id, chat_name):
+    def __init__(self, user_id, chat_name, chat_relationship):
         self.user_id = user_id
         self.chat_name = chat_name
+        self.chat_relationship = chat_relationship
         self.created_at = datetime.now()
 
     def serialize(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'chat_name': self.chat_name
+            'chat_name': self.chat_name,
+            'chat_relationship': self.chat_relationship
         }
     
 class Message(db.Model):

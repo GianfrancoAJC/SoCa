@@ -6,7 +6,7 @@ from flask import (
 )
 from app.models import db, setup_db, Chat, Message, Data
 from flask_cors import CORS
-from app.utilities import allowed_file, generate_random_response, smtp_server, smtp_port, smtp_user, smtp_password
+from app.utilities import allowed_file, smtp_server, smtp_port, smtp_user, smtp_password
 from app.users_controller import users_bp
 from app.authentication import authorize
 import sys
@@ -16,6 +16,8 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from threading import Thread
 import requests
+import random
+import time
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -23,13 +25,38 @@ def create_app(test_config=None):
         app.config['UPLOAD_FOLDER'] = ''
         app.register_blueprint(users_bp)
         setup_db(app, test_config['database_path'] if test_config else None)
-        CORS(app, origins=["*", "http://localhost:5001", "http://localhost:8080"])
+        CORS(app, origins=["http://localhost:5001", "http://localhost:8081", "*"])
 
     @app.after_request
     def after_request(response):
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods',
                              'GET,PATCH,POST,DELETE,OPTIONS')
+        return response
+    
+    def generate_random_response(chat_id, message):
+        message = message.lower()
+        for i in range(len(message) - 4):
+            if message[i:i+4] == 'hola' or message[i:i+4] == 'dias' or message[i:i+4] == 'tard' or message[i:i+4] == 'noch':
+                responses = ['Hola, ¿cómo estás?', 'Buenos días, ¿cómo estás?', 'Buenas tardes, ¿cómo estás?', 'Buenas noches, ¿cómo estás?']
+                break
+            elif message[i:i+4] == 'como' or message[i:i+4] == 'esta':
+                responses = ['Estoy bien, gracias por preguntar. ¿Y tú?', 'Estoy bien, ¿y tú?', 'Todo bien, ¿y tú?', 'Todo bien, ¿y tú?']
+                break
+            elif message[i:i+4] == 'bien' or message[i:i+4] == 'grac':
+                responses = ['¿Como va tu día?', '¿Qué tal tu día?', '¿Qué has hecho hoy?', 'Cuentame de tu vida']
+                break
+            elif message[i:i+4] == 'adios' or message[i:i+4] == 'chao' or message[i:i+4] == 'hast':
+                responses = ['Adiós, que tengas un buen día', 'Chao, que tengas un buen día', 'Hasta luego, que tengas un buen día', 'Nos vemos, que tengas un buen día']
+                break
+            else:
+                responses = ['Dejame contarte algo', 'no te imaginas lo que me paso', 'me encanta hablar contigo', 'que opinas de esto']
+        response = random.choice(responses)
+        delay = random.randint(0, 10)
+        time.sleep(delay)
+        new_message = Message(chat_id=chat_id, message=response, sender_type='auto')
+        db.session.add(new_message)
+        db.session.commit()
         return response
     
     @app.route('/chat', methods=['POST'])
@@ -59,8 +86,9 @@ def create_app(test_config=None):
             n = data['n']
             for i in range(n):
                 user_id = data['user_id']
-                chat_name = data['chat_name'][i]
-                chat = Chat(user_id=user_id, chat_name=chat_name)
+                chat_name = data['chats'][i]['name']
+                chat_relationship = data['chats'][i]['relationship']
+                chat = Chat(user_id=user_id, chat_name=chat_name, chat_relationship=chat_relationship)
                 db.session.add(chat)
                 db.session.commit()
             return jsonify({
@@ -125,9 +153,8 @@ def create_app(test_config=None):
         try:
             data = request.get_json()
             chat_id = data['chat_id']
-            thread = Thread(target=generate_random_response, args=(chat_id,))
-            thread.start()
-            return jsonify({'success': True, 'message': 'Response will be generated'}), 201
+            response = generate_random_response(chat_id, Message.query.filter_by(chat_id=chat_id, sender_type = "user").all()[-1].message)
+            return jsonify({'success': True, 'message': 'Response will be generated', 'response': response}), 201
         except Exception as e:
             print(sys.exc_info())
             print('e: ', e)
@@ -184,13 +211,40 @@ def create_app(test_config=None):
             data = request.get_json()
             user_id = data['user_id']
             chats = Chat.query.filter_by(user_id=user_id).all()
-            total_messages = sum([len(chat.messages) for chat in chats])
-            response_times = [message.modified_at - message.created_at for chat in chats for message in chat.messages]
-            average_response_time = sum(response_times, timedelta(0)) / len(response_times) if response_times else timedelta(0)
+            messages = Message.query.filter_by(chat_id=chats[-1].id).all()
+            total_messages = 0
+            for chat in chats:
+                for message in chat.messages:
+                    if message.sender_type == 'user':
+                        total_messages += 1
+            conection_time = messages[-1].created_at - messages[0].created_at if messages else timedelta(0)
+            chat_time = 0
+            for chat in chats:
+                for message in chat.messages:
+                    chat_time += len(message.message)/4.14 if message.sender_type == 'user' else 0
+            average_chat_time = chat_time / len(chats) if len(chats) > 0 else 0
+            average_message_time = chat_time / total_messages if total_messages > 0 else 0
+            average_response_time = 0
+            for chat in chats:
+                for i in range(1, len(chat.messages)):
+                    if chat.messages[i].sender_type == 'user':
+                        average_response_time += (chat.messages[i].created_at - chat.messages[i-1].created_at).total_seconds()
+            average_response_time /= total_messages
+            average_await_time = 0
+            for chat in chats:
+                for i in range(1, len(chat.messages)):
+                    if chat.messages[i].sender_type == 'auto':
+                        average_await_time += (chat.messages[i].created_at - chat.messages[i-1].created_at).total_seconds()
+            average_await_time /= total_messages
             return jsonify({
                 'success': True,
                 'total_messages': total_messages,
-                'average_response_time': average_response_time.total_seconds()
+                'conection_time': conection_time.total_seconds(),
+                'chat_time': chat_time,
+                'average_response_time': average_response_time,
+                'average_await_time': average_await_time,
+                'average_chat_time': average_chat_time,
+                'average_message_time': average_message_time
             }), 201
         except Exception as e:
             print(sys.exc_info())

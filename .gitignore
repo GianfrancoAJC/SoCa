@@ -1,5 +1,8 @@
 virtual/
 *static
+*templates
+*app.py
+backend/app/utilities.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

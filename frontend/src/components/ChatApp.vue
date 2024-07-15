@@ -1,71 +1,96 @@
 <template>
   <div class="chat-app">
-    <ChatWindow :messages="localMessages" />
-    <MessageInput @send-message="sendMessageToServer" />
+    <h2>Chat Simulado</h2>
+    <div class="chat-list">
+      <ul>
+        <li
+          v-for="chat in chats"
+          :key="chat.id"
+          :class="{ active: selectedChat && selectedChat.id === chat.id }"
+          @click="selectChat(chat)"
+        >
+          {{ chat.chat_name }}
+        </li>
+      </ul>
+    </div>
+    <div class="chat-window" v-if="selectedChat">
+      <h3>{{ selectedChat.chat_name }}</h3>
+      <div class="messages">
+        <div v-for="message in messages" :key="message.id" class="message">
+          <div :class="{ user: message.sender_type === 'user' }">
+            {{ message.message }}
+          </div>
+          <div v-if="message.sender_type !== 'user'" class="response">
+            Respuesta automática: {{ message.message }}
+          </div>
+        </div>
+      </div>
+      <div class="input-area">
+        <input
+          v-model="newMessage"
+          @keyup.enter="sendMessage"
+          placeholder="Escribe un mensaje..."
+        />
+        <button @click="sendMessage">Enviar</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import ChatWindow from "./ChatWindow.vue";
-import MessageInput from "./MessageInput.vue";
 import axios from "axios";
+import { mapState } from "vuex";
 
 export default {
   name: "ChatApp",
-  components: {
-    ChatWindow,
-    MessageInput,
-  },
-  props: {
-    messages: {
-      type: Array,
-      required: true,
-    },
+  computed: {
+    ...mapState(["userId"]),
   },
   data() {
     return {
-      localMessages: [...this.messages],
-      selectedChatId: null,
+      chats: [],
+      selectedChat: null,
+      messages: [],
+      newMessage: "",
     };
   },
-  watch: {
-    messages(newMessages) {
-      this.localMessages = [...newMessages];
-    },
+  async created() {
+    console.log("Componente ChatApp creado, user_id:", this.userId); // Depuración
+    try {
+      const response = await axios.post(`http://localhost:5001/chat`, {
+        user_id: this.userId,
+      });
+      this.chats = response.data.chats;
+    } catch (error) {
+      console.error("Error al obtener los chats:", error);
+    }
   },
   methods: {
-    async sendMessageToServer({ user, text }) {
-      const newMessage = {
-        chat_id: this.selectedChatId,
-        user: user,
-        text: text,
-      };
-      this.localMessages.push(newMessage);
-
+    async selectChat(chat) {
+      this.selectedChat = chat;
       try {
-        await axios.post("http://localhost:5000/messages", newMessage);
-        if (user === "You") {
-          this.addBotResponse();
-        }
+        const response = await axios.post(`http://localhost:5001/message`, {
+          chat_id: chat.id,
+        });
+        this.messages = response.data.messages;
       } catch (error) {
-        console.error("Error sending message:", error);
+        console.error("Error al obtener los mensajes:", error);
       }
     },
-    addBotResponse() {
-      setTimeout(async () => {
-        const botMessage = {
-          chat_id: this.selectedChatId,
-          user: "Bot",
-          text: "This is an automatic response",
-        };
-        this.localMessages.push(botMessage);
-
+    async sendMessage() {
+      if (this.newMessage.trim()) {
         try {
-          await axios.post("http://localhost:5000/messages", botMessage);
+          const response = await axios.post("http://localhost:5001/messages", {
+            chat_id: this.selectedChat.id,
+            user_id: this.userId,
+            content: this.newMessage,
+          });
+          this.messages.push(response.data.message);
+          this.newMessage = "";
         } catch (error) {
-          console.error("Error sending bot message:", error);
+          console.error("Error al enviar el mensaje:", error);
         }
-      }, 1000);
+      }
     },
   },
 };
@@ -73,24 +98,62 @@ export default {
 
 <style scoped>
 .chat-app {
-  width: 100%;
   display: flex;
+  max-width: 800px;
+  margin: auto;
   flex-direction: column;
-  height: 100vh;
 }
-
+.chat-list {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+}
+.chat-list ul {
+  list-style: none;
+  padding: 0;
+}
+.chat-list li {
+  padding: 10px;
+  cursor: pointer;
+}
+.chat-list li.active {
+  background-color: #007bff;
+  color: white;
+}
 .chat-window {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ccc;
+  padding: 20px;
 }
-
-.message-input {
-  display: flex;
+.messages {
+  border: 1px solid #ddd;
   padding: 10px;
-  background-color: #ffffff;
-  border-top: 1px solid #ccc;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.message {
+  margin-bottom: 10px;
+}
+.message.user {
+  text-align: right;
+}
+.input-area {
+  display: flex;
+  margin-top: 10px;
+}
+.input-area input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.input-area button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.response {
+  font-style: italic;
+  color: #888;
 }
 </style>

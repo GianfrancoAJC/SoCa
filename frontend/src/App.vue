@@ -1,69 +1,98 @@
 <template>
-  <div class="app">
-    <UserQuestionnaire
-      v-if="!questionnaireCompleted"
-      @complete="handleQuestionnaireComplete"
-    />
-    <div v-else>
-      <ChatList :chats="chats" @select-chat="selectChat" />
-      <ChatApp :messages="messages" />
-    </div>
+  <div id="app">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="#">SoCa</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <router-link class="nav-link" to="/">Inicio</router-link>
+          </li>
+          <li class="nav-item" v-if="!userId">
+            <router-link class="nav-link" to="/auth"
+              >Iniciar Sesión / Registrarse</router-link
+            >
+          </li>
+          <li class="nav-item" v-if="userId">
+            <router-link class="nav-link" :to="{ name: 'questionnaire' }"
+              >Cuestionario</router-link
+            >
+          </li>
+          <li class="nav-item" v-if="userId">
+            <router-link class="nav-link" :to="{ name: 'dashboard' }"
+              >Dashboard</router-link
+            >
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <router-view @login="handleLogin" />
   </div>
 </template>
 
 <script>
-import axios from "axios";
-import UserQuestionnaire from "./components/UserQuestionnaire.vue";
-import ChatList from "./components/ChatList.vue";
-import ChatApp from "./components/ChatApp.vue";
+import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "App",
-  components: {
-    UserQuestionnaire,
-    ChatList,
-    ChatApp,
-  },
-  data() {
-    return {
-      questionnaireCompleted: false,
-      chats: [],
-      messages: [],
-      selectedChatId: null,
-    };
+  computed: {
+    ...mapGetters(["getUserId"]),
+    userId() {
+      return this.getUserId;
+    },
   },
   methods: {
-    async handleQuestionnaireComplete(answers) {
-      this.questionnaireCompleted = true;
-      try {
-        const response = await axios.post(
-          "http://localhost:5000/generate_chats",
-          answers
-        );
-        this.chats = response.data.chats;
-        this.selectChat(this.chats[0].chat_id);
-      } catch (error) {
-        console.error("Error generating chats:", error);
-      }
+    ...mapActions(["setUserId"]),
+    handleLogin(userId) {
+      this.setUserId(userId);
     },
-    async selectChat(chatId) {
-      this.selectedChatId = chatId;
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/messages/${chatId}`
-        );
-        this.messages = response.data;
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    },
+    /*setupWebSocket() {
+      // Reemplaza 'localhost' con la dirección IP o el nombre de host donde se ejecuta tu servidor WebSocket
+      this.ws = new WebSocket("ws://190.236.203.37:8081/ws");
+
+      this.ws.onopen = () => {
+        console.log("Conectado al servidor WebSocket");
+        // Puedes enviar un mensaje al servidor al establecer la conexión si es necesario
+        this.ws.send("Hola desde Vue.js");
+      };
+
+      this.ws.onmessage = (event) => {
+        console.log("Mensaje recibido del servidor:", event.data);
+        // Procesa los mensajes recibidos del servidor WebSocket
+      };
+
+      this.ws.onclose = () => {
+        console.log("Conexión cerrada");
+        // Maneja la reconexión si es necesario
+      };
+    },*/
   },
+  /*mounted() {
+    this.setupWebSocket(); // Inicializa la conexión WebSocket al montar el componente
+  },*/
 };
 </script>
 
-<style scoped>
-.app {
-  display: flex;
-  height: 100vh;
+<style>
+body {
+  font-family: "Arial", sans-serif;
+}
+
+#app {
+  text-align: center;
+}
+
+.navbar {
+  margin-bottom: 20px;
 }
 </style>

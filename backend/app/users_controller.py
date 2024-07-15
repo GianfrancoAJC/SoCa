@@ -150,6 +150,18 @@ def verify_user():
                 'user_created_id': user_db.id,
                 'exp': datetime.datetime.now() + datetime.timedelta(minutes=1440)
             }, config['SECRET_KEY'], config['ALGORYTHM'])
+        if returned_code == 400:
+            return jsonify({
+                'success': False,
+                'errors': error_lists,
+                'message': 'Error verifying user'
+            }), returned_code
+        else:
+            return jsonify({
+                'success': True,
+                'token': token,
+                'user_id': user_db.id,
+            }), returned_code    
     except Exception as e:
         print('e: ', e)
         returned_code = 500
@@ -159,13 +171,5 @@ def verify_user():
             'success': False,
             'errors': error_lists,
             'message': 'Error verifying user'
-        })
-    elif returned_code != 201:
-        abort(returned_code)
-    else:
-        return jsonify({
-            'success': True,
-            'token': token,
-            'user_created_id': user_db.id,
         }), returned_code
 
