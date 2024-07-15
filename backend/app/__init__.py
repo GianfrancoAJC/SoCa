@@ -36,7 +36,7 @@ def create_app(test_config=None):
     
     def generate_random_response(chat_id, message):
         message = message.lower()
-        for i in range(len(message) - 4):
+        for i in range(len(message) - 3):
             if message[i:i+4] == 'hola' or message[i:i+4] == 'dias' or message[i:i+4] == 'tard' or message[i:i+4] == 'noch':
                 responses = ['Hola, ¿cómo estás?', 'Buenos días, ¿cómo estás?', 'Buenas tardes, ¿cómo estás?', 'Buenas noches, ¿cómo estás?']
                 break
@@ -57,7 +57,8 @@ def create_app(test_config=None):
         new_message = Message(chat_id=chat_id, message=response, sender_type='auto')
         db.session.add(new_message)
         db.session.commit()
-        return response
+        amessage = new_message.serialize()
+        return amessage
     
     @app.route('/chat', methods=['POST'])
     # @authorize
@@ -134,10 +135,12 @@ def create_app(test_config=None):
             db.session.add(new_message)
             db.session.commit()
             # Llamada al endpoint de respuesta automática
-            requests.post('http://localhost:5001/auto_response', json={'chat_id': chat_id})
+            amessage = requests.post('http://localhost:5001/auto_response', json={'chat_id': chat_id})
+            amessage = amessage.json()["response"]
             return jsonify({
                 'success': True,
-                'message': new_message.serialize()
+                'message': new_message.serialize(),
+                'amessage': amessage
             }), 201
         except Exception as e:
             print(sys.exc_info())

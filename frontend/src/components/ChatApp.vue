@@ -17,10 +17,13 @@
       <h3>{{ selectedChat.chat_name }}</h3>
       <div class="messages">
         <div v-for="message in messages" :key="message.id" class="message">
-          <div :class="{ user: message.sender_type === 'user' }">
+          <div
+            v-if="message.sender_type === 'user'"
+            :class="{ user: message.sender_type === 'user' }"
+          >
             {{ message.message }}
           </div>
-          <div v-if="message.sender_type !== 'user'" class="response">
+          <div v-if="message.sender_type === 'auto'" class="response">
             Respuesta automática: {{ message.message }}
           </div>
         </div>
@@ -83,9 +86,10 @@ export default {
           const response = await axios.post("http://localhost:5001/messages", {
             chat_id: this.selectedChat.id,
             user_id: this.userId,
-            content: this.newMessage,
+            message: this.newMessage,
           });
           this.messages.push(response.data.message);
+          this.messages.push(response.data.amessage);
           this.newMessage = "";
         } catch (error) {
           console.error("Error al enviar el mensaje:", error);
